@@ -1,8 +1,6 @@
 # Nucleo-H753ZI-drivers
 for ICM-42686 gyro
 
-
-
 # ICM-42686-P Relevant Memory Addresses
 
 This document contains the essential I2C/SPI register addresses for writing a basic driver for the ICM-42686-P 6-axis IMU. All addresses below are located in User Bank 0.
@@ -15,6 +13,8 @@ This document contains the essential I2C/SPI register addresses for writing a ba
   * *Expected Value*: `0x44` (Confirms device identity)
 * **`PWR_MGMT0`**: `0x4E`
   * *Usage*: Turn on accelerometer and gyroscope, switch power modes.
+  * **Wake Up Value**: `0x0F` (Sets bits 3:0 to `1111`, placing both Accel and Gyro into Low Noise / Active Mode).
+  * **Critical Note**: A minimum delay of 200µs is required after writing to this register before issuing any other I2C commands.
 
 ## Accelerometer Data Registers (16-bit)
 Data is split into High (Upper) and Low (Lower) 8-bit bytes. Combine them using bitwise operations (`(High << 8) | Low`).
@@ -27,7 +27,7 @@ Data is split into High (Upper) and Low (Lower) 8-bit bytes. Combine them using 
 * **`ACCEL_DATA_Z0`** (Low Byte): `0x24`
 
 ## Gyroscope Data Registers (16-bit)
-Data is split into High (Upper) and Low (Lower) 8-bit bytes.
+Data is split into High (Upper) and Low (Lower) 8-bit bytes. Combine them using bitwise operations (`(High << 8) | Low`).
 
 * **`GYRO_DATA_X1`** (High Byte): `0x25`
 * **`GYRO_DATA_X0`** (Low Byte): `0x26`
@@ -37,7 +37,35 @@ Data is split into High (Upper) and Low (Lower) 8-bit bytes.
 * **`GYRO_DATA_Z0`** (Low Byte): `0x2A`
 
 ## Configuration Registers (Essential for Setup)
-* **`ACCEL_CONFIG0`**: `0x50`
-  * *Usage*: Set accelerometer full-scale range (e.g., ±2g, ±16g) and Output Data Rate (ODR).
-* **`GYRO_CONFIG0`**: `0x4F`
-  * *Usage*: Set gyroscope full-scale range (e.g., ±250dps, ±2000dps) and Output Data Rate (ODR).
+These registers combine a 3-bit Full Scale (FS) setting (Bits 7:5) and a 4-bit Output Data Rate (ODR) setting (Bits 3:0).
+
+### **`ACCEL_CONFIG0`**: `0x50`
+* *Usage*: Set accelerometer full-scale range and Output Data Rate (ODR).
+* **Full Scale Options (Bits 7:5)**:
+  * `000` (`0x00`): ±32g
+  * `001` (`0x01`): ±16g
+  * `010` (`0x02`): ±8g
+  * `011` (`0x03`): ±4g
+  * `100` (`0x04`): ±2g
+* **ODR Options (Bits 3:0)**:
+  * `0110` (`0x06`): 1kHz (Default)
+  * `0111` (`0x07`): 200Hz
+  * `1000` (`0x08`): 100Hz
+  * `1001` (`0x09`): 50Hz
+
+### **`GYRO_CONFIG0`**: `0x4F`
+* *Usage*: Set gyroscope full-scale range and Output Data Rate (ODR).
+* **Full Scale Options (Bits 7:5)**:
+  * `000` (`0x00`): ±4000 dps (Default)
+  * `001` (`0x01`): ±2000 dps
+  * `010` (`0x02`): ±1000 dps
+  * `011` (`0x03`): ±500 dps
+  * `100` (`0x04`): ±250 dps
+  * `101` (`0x05`): ±125 dps
+  * `110` (`0x06`): ±62.5 dps
+  * `111` (`0x07`): ±31.25 dps
+* **ODR Options (Bits 3:0)**:
+  * `0110` (`0x06`): 1kHz (Default)
+  * `0111` (`0x07`): 200Hz
+  * `1000` (`0x08`): 100Hz
+  * `1001` (`0x09`): 50Hz
